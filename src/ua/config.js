@@ -20,7 +20,9 @@ const SaveConfiguration = () => {
     
         data.table.push({
             id: cl.id,
-            url: cl.url
+            name: cl.name,
+            url: cl.url,
+            owner: cl.owner,
         }); //add some data
     
     })
@@ -40,7 +42,9 @@ const ReadConfiguration = () => {
         
         ClientCfg.push({
             id: data.id,
+            name: data.name,
             url: data.url,
+            owner: data.owner
             // session: session
         })
     })

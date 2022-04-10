@@ -5,6 +5,12 @@ const bodyParser = require('body-parser')
 const expressWs = require('express-ws')(app);
 const logger = require('../pkg/logger')
 const api = require('../api')
+const { auth } = require('express-oauth2-jwt-bearer');
+
+const checkJwt = auth({
+  audience: 'https://konnex/api/auth',
+  issuerBaseURL: `https://dev-13j-hldy.us.auth0.com/`,
+});
 
 class Server {
   constructor () {
@@ -20,11 +26,12 @@ class Server {
     })
 
     //Config API
-    this.app.get('/client', api.GetClientCfg)
-    this.app.post('/client', api.SaveClientCfg)
+    this.app.get('/client', checkJwt, api.GetClientCfg)
+    this.app.post('/client', checkJwt, api.SaveClientCfg)
 
     //Browse API
     this.app.get('/client/browse', api.BrowseNode)
+    // this.app.get('/client/browse-all', api.BrowseAllNode)
 
     //Reading API
     this.app.get('/client/read', api.ReadNode)

@@ -3,9 +3,20 @@ const ua = require('./ua/client')
 const uaconfig = require('./ua/config')
 const {v4: uuidv4} = require('uuid');
 const _ = require('lodash');
+const authcl = require('./auth/client')
 
 const SaveClientCfg = async (req, res) => {
+    const authHeader = req.headers.authorization;
+
+    var token = ""
+    if (authHeader.startsWith("Bearer ")){
+        token = authHeader.substring(7, authHeader.length);
+    } else {
+        wrapper.send(res, 'Invalid Token Credentials', 'Unauthorized', 401)
+    }
+
     const payload = {
+        name: req.body.name,
         url : req.body.url
     }
 
@@ -15,11 +26,16 @@ const SaveClientCfg = async (req, res) => {
 
     try{
         // session = ua.CreateSession(payload.url)
+        const user = await authcl.GetUserInfo(token)
+
+        console.log(user)
 
         clientcfg = uaconfig.GetClient()
         clientcfg.push({
             id: uuidv4(),
+            name: payload.name,
             url: payload.url,
+            owner: user.email
             // session: session
         })
 
@@ -31,14 +47,26 @@ const SaveClientCfg = async (req, res) => {
 }
 
 const GetClientCfg = async (req, res) => {
+    const authHeader = req.headers.authorization;
+
+    var token = ""
+    if (authHeader.startsWith("Bearer ")){
+        token = authHeader.substring(7, authHeader.length);
+    } else {
+        wrapper.send(res, 'Invalid Token Credentials', 'Unauthorized', 401)
+    }
+
     try{
-        clientcfg = uaconfig.GetClient()
+        const user = await authcl.GetUserInfo(token);
+
+        clientcfg = uaconfig.GetClient().filter(obj=>obj.owner===user.email)
 
         const data = []
         clientcfg.map((cl)=>{
             data.push({
                 id: cl.id,
-                url: cl.url
+                url: cl.url,
+                name: cl.name
             })
         })
 
@@ -64,8 +92,6 @@ const BrowseNode = async (req, res) => {
         client = clientcfg.find(obj => {
             return obj.id === payload.id
         })
-
-        console.log(client)
 
         const references = await ua.Browse(client.url, payload.node)
 
@@ -140,6 +166,7 @@ module.exports = {
     SaveClientCfg,
     GetClientCfg,
     BrowseNode,
+    // BrowseAllNode,
     ReadNode,
     MonitorNode
 }
