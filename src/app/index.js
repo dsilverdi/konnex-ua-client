@@ -28,6 +28,7 @@ class Server {
     //Config API
     this.app.get('/client', checkJwt, api.GetClientCfg)
     this.app.post('/client', checkJwt, api.SaveClientCfg)
+    this.app.delete('/client', api.DeleteClient)
 
     //Browse API
     this.app.get('/client/browse', api.BrowseNode)

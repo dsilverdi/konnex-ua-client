@@ -13,21 +13,6 @@ const options = {
     
 };
 
-// const CreateSession = async (url) => {
-//     try{
-//         const client = opcua.OPCUAClient.create(options);
-
-//         await client.connect(url);
-
-//         const session = await client.createSession();
-
-//         return session
-
-//     }catch (err){
-//         console.log(err)
-//     }
-// }
-
 const Browse = async (url, node) => {
     try {
             const client = opcua.OPCUAClient.create(options);

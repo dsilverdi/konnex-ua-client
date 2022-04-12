@@ -1,10 +1,14 @@
 const fs = require('fs') 
 const ua = require('./client')
 
-const ClientCfg = []
+var ClientCfg = []
 
 const GetClient = () => {
     return ClientCfg
+}
+
+const UpdateClient = (newClient) => {
+    ClientCfg = newClient
 }
 
 const SaveConfiguration = () => {
@@ -52,6 +56,7 @@ const ReadConfiguration = () => {
 
 module.exports  = {
     GetClient,
+    UpdateClient,
     SaveConfiguration,
     ReadConfiguration
 }

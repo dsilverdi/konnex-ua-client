@@ -28,8 +28,6 @@ const SaveClientCfg = async (req, res) => {
         // session = ua.CreateSession(payload.url)
         const user = await authcl.GetUserInfo(token)
 
-        console.log(user)
-
         clientcfg = uaconfig.GetClient()
         clientcfg.push({
             id: uuidv4(),
@@ -70,10 +68,31 @@ const GetClientCfg = async (req, res) => {
             })
         })
 
-        wrapper.send(res, data, 'Your Request Has Been Processed ', 201) 
+        if (req.query.id) {
+            const ClientInfo = data.find(obj=>obj.id === req.query.id)
+            wrapper.send(res, ClientInfo, 'Your Request Has Been Processed ', 201)
+        }else{
+            wrapper.send(res, data, 'Your Request Has Been Processed ', 201)
+        }
+         
      }catch (err){
          wrapper.send(res, err, 'Error', 500)
      }
+}
+
+const DeleteClient = async (req,res) => {
+    const id = req.query.id
+    if (id){
+        client = uaconfig.GetClient()
+    
+        uaconfig.UpdateClient(
+            client.filter(obj=>obj.id !== id)
+        )
+        
+        wrapper.send(res, 'Success Delete Client', 'Success', 201)
+    }else{
+        wrapper.send(res, 'Empty Query', 'Error', 400)
+    }
 }
 
 const BrowseNode = async (req, res) => {
@@ -165,6 +184,7 @@ const MonitorNode = async (ws, req) => {
 module.exports = {
     SaveClientCfg,
     GetClientCfg,
+    DeleteClient,
     BrowseNode,
     // BrowseAllNode,
     ReadNode,
