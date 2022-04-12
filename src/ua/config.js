@@ -1,14 +1,15 @@
 const fs = require('fs') 
 const ua = require('./client')
 
-var ClientCfg = []
+const ClientCfg = []
 
 const GetClient = () => {
     return ClientCfg
 }
 
 const UpdateClient = (newClient) => {
-    ClientCfg = newClient
+    ClientCfg.length = 0;                  // Clear contents
+    ClientCfg.push.apply(ClientCfg, newClient);  // Append new contents
 }
 
 const SaveConfiguration = () => {

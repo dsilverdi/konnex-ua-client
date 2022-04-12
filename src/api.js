@@ -47,17 +47,17 @@ const SaveClientCfg = async (req, res) => {
 const GetClientCfg = async (req, res) => {
     const authHeader = req.headers.authorization;
 
-    var token = ""
-    if (authHeader.startsWith("Bearer ")){
-        token = authHeader.substring(7, authHeader.length);
-    } else {
-        wrapper.send(res, 'Invalid Token Credentials', 'Unauthorized', 401)
-    }
+    // var token = ""
+    // if (authHeader.startsWith("Bearer ")){
+    //     token = authHeader.substring(7, authHeader.length);
+    // } else {
+    //     wrapper.send(res, 'Invalid Token Credentials', 'Unauthorized', 401)
+    // }
 
     try{
-        const user = await authcl.GetUserInfo(token);
+        // const user = await authcl.GetUserInfo(token);
 
-        clientcfg = uaconfig.GetClient().filter(obj=>obj.owner===user.email)
+        clientcfg = uaconfig.GetClient().filter(obj=>obj.owner==="dsilverdi@gmail.com")
 
         const data = []
         clientcfg.map((cl)=>{
@@ -67,6 +67,8 @@ const GetClientCfg = async (req, res) => {
                 name: cl.name
             })
         })
+
+        
 
         if (req.query.id) {
             const ClientInfo = data.find(obj=>obj.id === req.query.id)
