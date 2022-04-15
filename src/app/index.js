@@ -5,12 +5,8 @@ const bodyParser = require('body-parser')
 const expressWs = require('express-ws')(app);
 const logger = require('../pkg/logger')
 const api = require('../api')
-const { auth } = require('express-oauth2-jwt-bearer');
-
-const checkJwt = auth({
-  audience: 'https://konnex/api/auth',
-  issuerBaseURL: `https://dev-13j-hldy.us.auth0.com/`,
-});
+const middleware = require('../middleware/auth')
+// const { auth } = require('express-oauth2-jwt-bearer');
 
 class Server {
   constructor () {
@@ -18,21 +14,14 @@ class Server {
     this.app.use(bodyParser.json())
     this.app.use(bodyParser.urlencoded({ extended: true }))
     this.app.use(cors())
-    // this.app.use(basicAuth.init())
-
-    // endpoint
-    this.app.get('/', (req, res) => {
-      res.send('This service is running properly ')
-    })
 
     //Config API
-    this.app.get('/client', checkJwt, api.GetClientCfg)
-    this.app.post('/client', checkJwt, api.SaveClientCfg)
+    this.app.get('/client', middleware.authenticateToken, api.GetClientCfg)
+    this.app.post('/client', middleware.authenticateToken, api.SaveClientCfg)
     this.app.delete('/client', api.DeleteClient)
 
     //Browse API
     this.app.get('/client/browse', api.BrowseNode)
-    // this.app.get('/client/browse-all', api.BrowseAllNode)
 
     //Reading API
     this.app.get('/client/read', api.ReadNode)

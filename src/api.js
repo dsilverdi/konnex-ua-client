@@ -3,38 +3,26 @@ const ua = require('./ua/client')
 const uaconfig = require('./ua/config')
 const {v4: uuidv4} = require('uuid');
 const _ = require('lodash');
-const authcl = require('./auth/client')
 
 const SaveClientCfg = async (req, res) => {
-    const authHeader = req.headers.authorization;
-
-    var token = ""
-    if (authHeader.startsWith("Bearer ")){
-        token = authHeader.substring(7, authHeader.length);
-    } else {
-        wrapper.send(res, 'Invalid Token Credentials', 'Unauthorized', 401)
-    }
-
-    const payload = {
+      const payload = {
         name: req.body.name,
         url : req.body.url
     }
+
+    const currentUser = req.user.Username
 
     if (_.isEmpty(payload, true)) {
         wrapper.send(res, 'Payload cannot be empty', 'Error', 400)
     }
 
     try{
-        // session = ua.CreateSession(payload.url)
-        const user = await authcl.GetUserInfo(token)
-
         clientcfg = uaconfig.GetClient()
         clientcfg.push({
             id: uuidv4(),
             name: payload.name,
             url: payload.url,
-            owner: user.email
-            // session: session
+            owner: currentUser
         })
 
         wrapper.send(res, payload.url, 'Your Request Has Been Processed ', 201)
@@ -45,19 +33,11 @@ const SaveClientCfg = async (req, res) => {
 }
 
 const GetClientCfg = async (req, res) => {
-    const authHeader = req.headers.authorization;
 
-    // var token = ""
-    // if (authHeader.startsWith("Bearer ")){
-    //     token = authHeader.substring(7, authHeader.length);
-    // } else {
-    //     wrapper.send(res, 'Invalid Token Credentials', 'Unauthorized', 401)
-    // }
+    const currentUser = req.user.Username
 
     try{
-        // const user = await authcl.GetUserInfo(token);
-
-        clientcfg = uaconfig.GetClient().filter(obj=>obj.owner==="dsilverdi@gmail.com")
+        clientcfg = uaconfig.GetClient().filter(obj=>obj.owner===currentUser)
 
         const data = []
         clientcfg.map((cl)=>{
