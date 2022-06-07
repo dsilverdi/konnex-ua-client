@@ -3,6 +3,15 @@ const ua = require('./ua/client')
 const uaconfig = require('./ua/config')
 const {v4: uuidv4} = require('uuid');
 const _ = require('lodash');
+const redis = require('redis')
+
+const rediscl = redis.createClient(6380);
+
+rediscl.connect();
+
+rediscl.on("error", (error) => {
+    console.error(error);
+});
 
 const SaveClientCfg = async (req, res) => {
       const payload = {
@@ -78,60 +87,83 @@ const DeleteClient = async (req,res) => {
 }
 
 const BrowseNode = async (req, res) => {
-    const payload = {
-        id : req.query.id,
-        node: req.query.node
-    }
+    urlkey = req.url
 
-    if (_.isEmpty(payload, true)) {
-        wrapper.send(res, 'Payload cannot be empty', 'Error', 400)
-    }
-
-    try{      
-
-        clientcfg = uaconfig.GetClient()
-        client = clientcfg.find(obj => {
-            return obj.id === payload.id
-        })
-
-        const references = await ua.Browse(client.url, payload.node)
-
-        const data = []
-        references.map((ref)=>{
-            data.push({
-                node_id : ref.nodeId,
-                browse_name : ref.browseName.toString()
+    const value = await rediscl.get(urlkey);
+    if (value) {
+        wrapper.send(res, JSON.parse(value), 'cached', 201)
+    }else{
+        const payload = {
+            id : req.query.id,
+            node: req.query.node
+        }
+    
+        if (_.isEmpty(payload, true)) {
+            wrapper.send(res, 'Payload cannot be empty', 'Error', 400)
+        }
+    
+        try{      
+    
+            clientcfg = uaconfig.GetClient()
+            client = clientcfg.find(obj => {
+                return obj.id === payload.id
             })
-        })
-        wrapper.send(res, data, 'Your Request Has Been Processed ', 201)
+    
+            const references = await ua.Browse(client.url, payload.node)
+    
+            const data = []
+            references.map((ref)=>{
+                data.push({
+                    node_id : ref.nodeId,
+                    browse_name : ref.browseName.toString()
+                })
+            })
 
-    }catch(err){
-        wrapper.send(res, err, 'Error', 500)
+            await rediscl.set(urlkey, JSON.stringify(data));
+            await rediscl.expire(urlkey, 12*60);
+
+            wrapper.send(res, data, 'Your Request Has Been Processed ', 201)
+    
+        }catch(err){
+            wrapper.send(res, err, 'Error', 500)
+        }
     }
+    
 }
 
 const ReadNode = async (req, res) => {
-    const payload = {
-        id : req.query.id,
-        node: req.query.node
-    }
+    urlkey = req.url
+    
+    const value = await rediscl.get(urlkey);
+    if (value) {
+        wrapper.send(res, JSON.parse(value), 'cached', 201)
+    }else{
+        const payload = {
+            id : req.query.id,
+            node: req.query.node
+        }
+    
+        if (_.isEmpty(payload, true)) {
+            wrapper.send(res, 'Payload cannot be empty', 'Error', 400)
+        }
+    
+        try{
+            clientcfg = uaconfig.GetClient()
+            client = clientcfg.find(obj => {
+                return obj.id === payload.id
+            })
+    
+            const readval = await ua.Read(client.url, payload.node)
 
-    if (_.isEmpty(payload, true)) {
-        wrapper.send(res, 'Payload cannot be empty', 'Error', 400)
-    }
+            await rediscl.set(urlkey, JSON.stringify(readval));
+            await rediscl.expire(urlkey, 10);
 
-    try{
-        clientcfg = uaconfig.GetClient()
-        client = clientcfg.find(obj => {
-            return obj.id === payload.id
-        })
-
-        const readval = await ua.Read(client.url, payload.node)
-        wrapper.send(res, readval, 'Your Request Has Been Processed ', 201)
-
-    }catch(err){
-        wrapper.send(res, err, 'Error', 500)
-    }
+            wrapper.send(res, readval, 'Your Request Has Been Processed ', 201)
+    
+        }catch(err){
+            wrapper.send(res, err, 'Error', 500)
+        }
+    }   
 
 }
 
@@ -148,12 +180,6 @@ const MonitorNode = async (ws, req) => {
         id : req.query.id,
         node: req.query.node
     }
-
-    // var number = 21
-    // setInterval(function(){
-    //     ws.send(number)
-    //     number = number + 2
-    // ;}, 1000);
     
     clientcfg = uaconfig.GetClient()
     client = clientcfg.find(obj => {
